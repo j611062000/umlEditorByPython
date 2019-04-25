@@ -1,26 +1,39 @@
 class MouseMotionToController():
     
-    # These two variables are instances of TwoDimensionShape
-    currentActiveObjectOnCanvas = None
-    lastActiveObjectOnCanvas = None
+    clickedObjectOnCanvas = list()
+    selectedObjectOnCanvas = list()
+    
+    
+    # @classmethod
+    # def verifySelectedObj(cls):
+    #     if MouseMotionToController.modeOfClickedObjectOnCaanvas == 3:
 
-    # isClickOnCanvas = None
-    # isClickOnClass = None
-    # isClickonUseCase = None
 
     @classmethod
-    def updatecurrentActiveObjectOnCanvas(cls, objOfShape):
-        cls.currentActiveObjectOnCanvas = objOfShape
+    def flushclickedObjectOnCanvas(cls):
+        cls.clickedObjectOnCanvas = []
     
     @classmethod
-    def flushcurrentActiveObjectOnCanvas(cls):
-        cls.currentActiveObjectOnCanvas = None
+    def modeOfClickedObjectOnCaanvas(cls):
+        clickedObj = cls.clickedObjectOnCanvas
 
-    @classmethod
-    def updateLastActiveObjectOnCanvas(cls, objOfShape):
-        cls.lastActiveObjectOnCanvas = objOfShape
+        if not clickedObj:
+            #  no action
+            return 0
+
+        elif len(clickedObj) == 1:
+            if not clickedObj[-1]:
+                # [False] := last click isn't on object
+                return 1
+ 
+        elif len(clickedObj) >= 2:
+            if clickedObj[-2] == False and clickedObj[-1] == False:
+                # [...False, False] := last click isn't on object
+                return 2
+            elif clickedObj[-2] != False and clickedObj[-1] == False:
+                # [...Obj, False] := last click is on object
+                return 3
+
+class ButtonToMode():
     
-    @classmethod
-    def flushLastActiveObjectOnCanvas(cls):
-        cls.lastActiveObjectOnCanvas = None
-        
+    currentAvailableModes = list()

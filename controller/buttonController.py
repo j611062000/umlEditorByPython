@@ -1,6 +1,6 @@
 class ButtonController():
 
-    availableButtons     = list()
+    availableButtons    = list()
     currentActiveButton = None
 
     @classmethod

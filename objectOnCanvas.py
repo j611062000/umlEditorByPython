@@ -1,5 +1,10 @@
 import tkinter
 from bridge import MouseMotionToController
+from controller.buttonController import ButtonController
+from decorators import printCurrentAndLastActiveObj, callOnlyInSelectMode
+
+# Bugs: port can't not work occassionally
+
 
 class TwoDimensionShape():
 
@@ -15,17 +20,15 @@ class TwoDimensionShape():
         self.bindToCanvasWithMouseEvent(self.idInCanvas)
         self.updateCoordinateOfPort(mouseEvent, shiftX, shiftY)
         
-
     def handleMouseClickEvent(self, event):
-        MouseMotionToController.updatecurrentActiveObjectOnCanvas(self)
+        MouseMotionToController.clickedObjectOnCanvas.append(self)
         TwoDimensionShape.canvasContainer.tag_raise(self.idInCanvas)
+        self.raisePortToFront()
         self.showPort()
 
-
     def handleMouseReleaseEvent(self, event):
-        MouseMotionToController.flushcurrentActiveObjectOnCanvas()
-        self.hidePort(MouseMotionToController.lastActiveObjectOnCanvas)
-        MouseMotionToController.updateLastActiveObjectOnCanvas(self)
+        pass
+        # self.hidePort(MouseMotionToController.lastActiveObjectOnCanvas)
 
     def bindToCanvasWithMouseEvent(self, bindingShape):
         pressHandler = self.handleMouseClickEvent
@@ -50,9 +53,9 @@ class TwoDimensionShape():
         bottom = [(mouseEvent.x+shiftX/2), (mouseEvent.y+shiftY)]
         
         self.coordinateOfPort = [left, top, right, bottom]
-
         self.instantiatePorts(self.coordinateOfPort, normalizeOfPositionForPort)
 
+    @callOnlyInSelectMode
     def showPort(self):
         for portId in self.idOfPortInCanvas:
             TwoDimensionShape.canvasContainer.itemconfig(portId, state = tkinter.NORMAL)
@@ -61,6 +64,16 @@ class TwoDimensionShape():
         if objecOfShape != None:
             for portId in objecOfShape.idOfPortInCanvas:
                 TwoDimensionShape.canvasContainer.itemconfig(portId, state = tkinter.HIDDEN)
+
+
+    def raisePortToFront(self):
+        for port in self.idOfPortInCanvas:
+            TwoDimensionShape.canvasContainer.tag_raise(port)
+
+
+    def movePortWhenShapIsDragged(self, dx, dy):
+        for idOfPort in self.idOfPortInCanvas:
+            TwoDimensionShape.canvasContainer.move(idOfPort, dx, dy)
 
 
     @classmethod
@@ -72,7 +85,7 @@ class TwoDimensionShape():
             # port
             return methodOfCreation(mouseEvent[0], mouseEvent[1],mouseEvent[0]+shiftX,mouseEvent[1]+shiftY, fill = TwoDimensionShape.fillColorOfPort, state = tkinter.HIDDEN)
 
-    
+        
 
 
 

@@ -10,26 +10,26 @@ class CanvasController():
 
     @classmethod
     def findWhichModeShouldBeActive(cls):
+        currentActiveMode = None
         for mode in cls.availableModes:
             if mode.nameOfMode == ButtonController.currentActiveButton:
-                return mode
+                currentActiveMode = mode
+                break
+            
+        return currentActiveMode
+                
 
     @classmethod
     def handleClickOnCanvas(cls, mouseEvent):
-        CanvasController.handlePortWhenDirectlyClickOnCanvas()
+        MouseMotionToController.clickedObjectOnCanvas.append(False)
 
-        mode = cls.findWhichModeShouldBeActive()
-        mode.handleMouseClick(mouseEvent, cls.canvasContainer)
+        currentActiveMode = cls.findWhichModeShouldBeActive()
+        currentActiveMode.handleMouseClick(mouseEvent, cls.canvasContainer)
     
     @classmethod
     def handlePressAndDragOnCanvas(cls, mouseEvent):
-        mode = cls.findWhichModeShouldBeActive()        
-        mode.handleMousePressAndDrag(mouseEvent, cls.canvasContainer)
+        currentActiveMode = cls.findWhichModeShouldBeActive()        
+        currentActiveMode.handleMousePressAndDrag(mouseEvent, cls.canvasContainer)
     
-    @classmethod
-    def handlePortWhenDirectlyClickOnCanvas(cls):
-        if MouseMotionToController.currentActiveObjectOnCanvas == None:
-            if MouseMotionToController.lastActiveObjectOnCanvas != None:
-                lastActive = MouseMotionToController.lastActiveObjectOnCanvas
-                lastActive.hidePort(lastActive)
+   
 

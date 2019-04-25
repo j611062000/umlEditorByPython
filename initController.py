@@ -4,7 +4,7 @@ from buttons import Button as bt
 from controller.buttonController import ButtonController
 from configuration import ConfigOfButton, ConfigOfCanvas
 from controller.canvasController import CanvasController
-from modeController import *
+from controller.modeController import *
 
 def initAllButtons(master):
     
