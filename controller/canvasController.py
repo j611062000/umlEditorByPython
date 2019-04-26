@@ -1,4 +1,4 @@
-from  controller.buttonController import ButtonController
+from controller.buttonController import ButtonController
 from bridge import MouseMotionToController
 from configuration import ConfigOfButton
 from objectOnCanvas import ClassObject, UseCaseObject
@@ -18,7 +18,6 @@ class CanvasController():
             
         return currentActiveMode
                 
-
     @classmethod
     def handleClickOnCanvas(cls, mouseEvent):
         MouseMotionToController.clickedObjectOnCanvas.append(False)
@@ -30,6 +29,13 @@ class CanvasController():
     def handlePressAndDragOnCanvas(cls, mouseEvent):
         currentActiveMode = cls.findWhichModeShouldBeActive()        
         currentActiveMode.handleMousePressAndDrag(mouseEvent, cls.canvasContainer)
+    
+    
+    @classmethod
+    def handleMouseReleaseOnCanvas(cls, mouseEvent):
+        currentActiveMode = cls.findWhichModeShouldBeActive()  
+        currentActiveMode.handleMouseRelease(mouseEvent, cls.canvasContainer)
+
     
    
 

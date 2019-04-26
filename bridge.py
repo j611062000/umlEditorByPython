@@ -2,16 +2,22 @@ class MouseMotionToController():
     
     clickedObjectOnCanvas = list()
     selectedObjectOnCanvas = list()
-    
-    
-    # @classmethod
-    # def verifySelectedObj(cls):
-    #     if MouseMotionToController.modeOfClickedObjectOnCaanvas == 3:
-
+    idOfMouseReleaseObject = list()
+   
 
     @classmethod
     def flushclickedObjectOnCanvas(cls):
         cls.clickedObjectOnCanvas = []
+    
+    
+    @classmethod
+    def flushselectedObjectOnCanvas(cls):
+        cls.selectedObjectOnCanvas = []
+    
+    @classmethod
+    def flushMouseReleaseOnObjectOfCanvas(cls):
+        cls.mouseReleaseOnObjectOfCanvas = []
+    
     
     @classmethod
     def modeOfClickedObjectOnCaanvas(cls):
@@ -37,3 +43,6 @@ class MouseMotionToController():
 class ButtonToMode():
     
     currentAvailableModes = list()
+
+class PopTextToClassName():
+    keyInText = None

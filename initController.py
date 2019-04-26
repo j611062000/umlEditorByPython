@@ -41,6 +41,7 @@ def initCanvasContainer(master):
 def addMouseListenerToCanvas(canvasContainer):
     canvasContainer.bind("<Button-1>", CanvasController.handleClickOnCanvas)
     canvasContainer.bind("<B1-Motion>", CanvasController.handlePressAndDragOnCanvas)
+    canvasContainer.bind("<ButtonRelease-1>", CanvasController.handleMouseReleaseOnCanvas)
 
 
 # Should be revised when there is new mode added
@@ -48,3 +49,6 @@ def initModeControllers():
     CanvasController.availableModes.append(ClassModeController())
     CanvasController.availableModes.append(SelectModeController())
     CanvasController.availableModes.append(UseCaseModeController())
+    CanvasController.availableModes.append(associationLinController())
+    CanvasController.availableModes.append(generalizationLinController())
+    CanvasController.availableModes.append(compositionLinController())
