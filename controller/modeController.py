@@ -1,86 +1,108 @@
-from controller.buttonController import ButtonController
 from bridge import MouseMotionToController
 from configuration import ConfigOfButton
+from controller.buttonController import ButtonController
 from objectOnCanvas import ClassObject, UseCaseObject, LineObject, GeneralizationLine, CompositiontionLine
+from decorators import overrides, trackMouseClickedObjs
 
 
 class ModeController():
+
+    def __init__(self, nameOfMode):
+        self.nameOfMode = nameOfMode
     
     def handleMouseClick(self, mouseEvent, canvasContainer):
         pass
 
+
     def handleMousePressAndDrag(self, mouseEvent, canvasContainer):
         pass
+    
+
+    def handleMouseRelease(self, mouseEvent, canvasContainer):
+        pass
+
 
     def normalizeGUIWhenUnactive(self):
         pass
     
-    def handleMouseRelease(self, mouseEvent, canvasContainer):
-        pass
     
-    @classmethod
-    def verfiyLastClickIsOnShape(cls):
-        if MouseMotionToController.modeOfClickedObjectOnCaanvas() == 3:
+
+class ShapeController(ModeController):
+
+    def __init__(self, nameOfMode):
+        super().__init__(nameOfMode)
+   
+    
+    @staticmethod
+    def verfiyLastClickIsOnShape():
+        if MouseMotionToController.whatIsClickedByMouse() == MouseMotionToController.CLICK_ON_OBJECT:
             return True
         else:
             return False
-    
 
 
-class ClassModeController(ModeController):
+class ClassModeController(ShapeController):
 
-    nameOfMode = ConfigOfButton.nameOfClass
-    availableClassModes = list()
+    availableObjOnCanvas = list()
 
-    # @overrides(ModeController)
+    def __init__(self):
+        super().__init__(ConfigOfButton.nameOfClass)
+
+    @overrides
     def handleMouseClick(self, mouseEvent, canvasContainer):
-        self.availableClassModes.append(ClassObject(mouseEvent, canvasContainer))
+        self.availableObjOnCanvas.append(ClassObject(mouseEvent, canvasContainer))
     
     @classmethod
-    def availableObjs(cls):
-        return cls.availableClassModes
-
-
-class UseCaseModeController(ModeController):
+    def getAvailableObjs(cls):
+        return cls.availableObjOnCanvas
     
-    nameOfMode = ConfigOfButton.nameOfUseCase
-    availableUseCaseModes = list()
 
-    # @overrides(ModeController)
+class UseCaseModeController(ShapeController):
+
+    availableObjOnCanvas = list()
+
+    
+    def __init__(self):
+        super().__init__(ConfigOfButton.nameOfUseCase)
+
+    @overrides
     def handleMouseClick(self, mouseEvent, canvasContainer):
-        self.availableUseCaseModes.append(UseCaseObject(mouseEvent, canvasContainer))
+        self.availableObjOnCanvas.append(UseCaseObject(mouseEvent, canvasContainer))
     
     @classmethod
-    def availableObjs(cls):
-        return cls.availableUseCaseModes
-
+    def getAvailableObjs(cls):
+        return cls.availableObjOnCanvas
 
 
 class SelectModeController(ModeController):
 
-    nameOfMode = ConfigOfButton.nameOfSelect
+    # should be revised when new mode added
+    compatibleModes = [ClassModeController, UseCaseModeController]
     mouseClickX = None
     mouseClickY = None
     absXinDrage = None
     absYinDrage = None
 
-    def disablePortByObj(self, objects, currentActiveObj):
-        for obj in objects:
-            if obj != currentActiveObj and obj:
-                obj.hidePort(obj)
+    def __init__(self):
+        super().__init__(ConfigOfButton.nameOfSelect)
 
+    def clickOnCanvas():
+    def clickOnShape():
+
+    @trackMouseClickedObjs
     def handleMouseClick(self, mouseEvent, canvasContainer):
-
-        if ModeController.verfiyLastClickIsOnShape():
-            currentActiveObj = MouseMotionToController.clickedObjectOnCanvas[-2]
-            self.disablePortByObj(MouseMotionToController.clickedObjectOnCanvas, currentActiveObj)
-            self.batchdisablePortById()
+        
+        # {no selected, single selected, multi selected} x {click on shape, click on canvas, drag}
+        if ShapeController.verfiyLastClickIsOnShape():
+            currentActiveObj = MouseMotionToController.singleClickedObj[-2]
+            # SelectModeController.hidePortsByObj(MouseMotionToController.singleClickedObj, currentActiveObj)
+            SelectModeController.hideAllPortsOfObjs()
             currentActiveObj.showPort()
 
         else:
-            self.disablePortByObj(MouseMotionToController.clickedObjectOnCanvas, None)
-            if MouseMotionToController.selectedObjectOnCanvas:
-                self.batchdisablePortById()
+            SelectModeController.hidePortsByObj(MouseMotionToController.singleClickedObj, None)
+            if MouseMotionToController.multiSelectedObjs:
+                SelectModeController.hideAllPortsOfObjs()
 
         self.mouseClickX = mouseEvent.x
         self.mouseClickY = mouseEvent.y
@@ -94,8 +116,8 @@ class SelectModeController(ModeController):
         self.mouseClickX += dx
         self.mouseClickY += dy
         
-        if ModeController.verfiyLastClickIsOnShape():
-            draggingObj = MouseMotionToController.clickedObjectOnCanvas[-2]
+        if ShapeController.verfiyLastClickIsOnShape():
+            draggingObj = MouseMotionToController.singleClickedObj[-2]
             canvasContainer.move(draggingObj.idInCanvas, dx, dy)
             draggingObj.movePortWhenShapIsDragged(dx, dy)
         
@@ -105,13 +127,30 @@ class SelectModeController(ModeController):
             x2 = self.mouseClickX + dx
             y2 = self.mouseClickY + dy
             selectedObj = canvasContainer.find_enclosed(min(x1,x2), max(y1,y2), max(x1,x2), min(y1,y2))
-            MouseMotionToController.flushselectedObjectOnCanvas()
-            MouseMotionToController.selectedObjectOnCanvas.extend(selectedObj)
-            self.batchinablePortById()
-            # print(MouseMotionToController.selectedObjectOnCanvas)
+            MouseMotionToController.flushmultiSelectedObjs()
+            MouseMotionToController.multiSelectedObjs.extend(selectedObj)
+            self.showAllPortsOfObjs()
+            # print(MouseMotionToController.multiSelectedObjs)
 
+    @classmethod
+    def hidePortsByObj(cls, objs, currentActiveObj):
+        for obj in objs:
+            if obj != currentActiveObj and obj:
+                obj.hidePort(obj)
 
-    def isIdMatchObjects(self, objs, ids):
+    @classmethod
+    def hidePortsByIds(cls, objs, ids):
+        for obj in cls.getMatchedObjsByIds(objs, ids):
+            obj.hidePort(obj)
+
+    @classmethod
+    def showPortsOfObjs(cls, objs, ids):
+        if cls.getMatchedObjsByIds(objs, ids):
+            for obj in cls.getMatchedObjsByIds(objs, ids):
+                obj.showPort()
+    
+    @classmethod
+    def getMatchedObjsByIds(cls, objs, ids):
         tmp = list()
         for id in ids:
             for obj in objs:
@@ -119,37 +158,30 @@ class SelectModeController(ModeController):
                     tmp.append(obj)
         return tmp
    
-
-    def setMultipleObjePort(self, objs, ids):
-        if self.isIdMatchObjects(objs, ids):
-            for obj in self.isIdMatchObjects(objs, ids):
-                obj.showPort()
-        
-    def disablePortById(self, objs, ids):
-        for obj in self.isIdMatchObjects(objs, ids):
-            obj.hidePort(obj)
-
-    def batchdisablePortById(self):
-        self.disablePortById(ClassModeController.availableObjs(), MouseMotionToController.selectedObjectOnCanvas)
-        self.disablePortById(UseCaseModeController.availableObjs(), MouseMotionToController.selectedObjectOnCanvas)
+    @classmethod
+    def hideAllPortsOfObjs(cls):
+        for mode in cls.compatibleModes:
+            cls.hidePortsByIds(mode.getAvailableObjs(), MouseMotionToController.multiSelectedObjs)
 
 
-    def batchinablePortById(self):
-        self.setMultipleObjePort(ClassModeController.availableObjs(), MouseMotionToController.selectedObjectOnCanvas)
-        self.setMultipleObjePort(UseCaseModeController.availableObjs(), MouseMotionToController.selectedObjectOnCanvas)
+    def showAllPortsOfObjs(cls):
+        for mode in cls.compatibleModes:
+            cls.showPortsOfObjs(mode.getAvailableObjs(), MouseMotionToController.multiSelectedObjs)
  
 
     
     
 class LineController(ModeController):
 
-    nameOfMode = None
     availableLineMode = list()
     # coordinates
     startPoint = None
     endPoint = None
     belongRegion = None
     canvasContainer = None
+
+    def __init__(self, nameOfMode):
+        return super().__init__(nameOfMode)
 
     @classmethod
     def findShapeObjById(cls, objs, id):
@@ -169,107 +201,52 @@ class LineController(ModeController):
     @classmethod
     def handleMouseClick(cls, mouseEvent, canvasContainer):
         cls.canvasContainer = canvasContainer
-        if ModeController.verfiyLastClickIsOnShape():
-            startObjId = cls.canvasContainer.find_closest(mouseEvent.x, mouseEvent.y)
+        if ShapeController.verfiyLastClickIsOnShape():
+            startCo = cls.findCoordById(cls.canvasContainer.find_closest(mouseEvent.x, mouseEvent.y))
+            startObjId = cls.canvasContainer.find_closest(mouseEvent.x, mouseEvent.y,start = startCo)
             cls.startPoint = cls.canvasContainer.coords(startObjId)
-            print("test",cls.startPoint)
+            print("start",startObjId)
             
     
     
     @classmethod
     def handleMouseRelease(cls, mouseEvent, canvasContainer):
         cls.canvasContainer = canvasContainer
-        # idOfEndObj = MouseMotionToController.idOfMouseReleaseObject[-1]
-        # objs = [ClassModeController.availableClassModes, UseCaseModeController.availableUseCaseModes]
-        # endObj = cls.findShapeObjById(objs,idOfEndObj)
-        # MouseMotionToController.flushMouseReleaseOnObjectOfCanvas()
-        # cls.endPoint = cls.calEndPoint(mouseEvent, endObj)
         endObjId = cls.canvasContainer.find_closest(mouseEvent.x, mouseEvent.y)
         cls.endPoint = cls.canvasContainer.coords(endObjId)
+        print("end",cls.endPoint)
+
 
         cls.newLine()
 
+    @classmethod
+    def findCoordById(cls, id):
+        return cls.canvasContainer.coords(id)
 
-    # @classmethod
-    # def pointHelpler(cls, mouseEvent, targetShapeObj):
-    #     centerX = sum([port[0] for port in targetShapeObj.coordinateOfPort])/4
-    #     centerY = sum([port[1] for port in targetShapeObj.coordinateOfPort])/4
-    #     cls.belongRegion = cls.calBelongRegion(targetShapeObj.plusSlope, targetShapeObj.negativeSlope,centerX, centerY, mouseEvent.x, mouseEvent.y)
-    #     return cls.findOutTheDrawPoint(targetShapeObj.coordinateOfPort, cls.belongRegion)
+class AssociationLinController(LineController):
 
-
-    # @classmethod
-    # def calEndPoint(cls, mouseEvent, endObj):
-    #     return cls.pointHelpler(mouseEvent, endObj)
-
-
-    # @classmethod
-    # def calStartPoint(cls, mouseEvent, startObj):
-    #     return cls.pointHelpler(mouseEvent, startObj)
-       
-
-
-    # @classmethod
-    # def availableObjs(cls):
-    #     return cls.availableLineMode
-
-    # @classmethod
-    # def calSlope(cls, x1, y1, x2, y2):
-    #     return (y2-y1)/(x2-x1)
-    
-    # @classmethod 
-    # def findOutTheDrawPoint(cls, ports, belongPostion):
-    #     if belongPostion == "TOP":
-    #         return sorted(ports, key = lambda port: port[1], reverse = True)[0]
-            
-    #     elif belongPostion == "BOTTOM":
-    #         return sorted(ports, key = lambda port: port[1], reverse = False)[0]
-
-    #     elif belongPostion == "RIGHT":
-    #         return sorted(ports, key = lambda port: port[0], reverse = True)[0]
-
-    #     elif belongPostion == "LEFT":
-    #         return sorted(ports, key = lambda port: port[1], reverse = False)[0]
-
-
-
-    # @classmethod
-    # def calBelongRegion(cls, plusSlope, negativeSlope, centerX, centerY, x, y):
-    #     slope = cls.calSlope(x, y, centerX, centerY)
-    #     if x >= centerX:
-    #         if slope >= plusSlope:
-    #             return "TOP"
-    #         elif slope <= negativeSlope:
-    #             return "BOTTOM"
-    #         else:
-    #             return "RIGHT"
-        
-    #     else:
-    #         if slope >= plusSlope:
-    #             return "BOTTOM"
-    #         elif slope <= negativeSlope:
-    #             return "TOP"
-    #         else:
-    #             return "LEFT"
-
-class associationLinController(LineController):
-    nameOfMode = ConfigOfButton.nameOfAssociationLine
+    def __init__(self):
+        super().__init__(ConfigOfButton.nameOfAssociationLine)
 
     @classmethod
     def newLine(cls):
         coordinate = [cls.startPoint[0], cls.startPoint[1], cls.endPoint[0], cls.endPoint[1]]
         cls.availableLineMode.append(LineObject(cls.canvasContainer, *coordinate))
 
-class generalizationLinController(LineController):
-    nameOfMode = ConfigOfButton.nameOfGeneralizationLine
+class GeneralizationLinController(LineController):
+
+    def __init__(self):
+        return super().__init__(ConfigOfButton.nameOfGeneralizationLine)
 
     @classmethod
     def newLine(cls):
         coordinate = [cls.startPoint[0], cls.startPoint[1], cls.endPoint[0], cls.endPoint[1]]
         cls.availableLineMode.append(GeneralizationLine(cls.canvasContainer, *coordinate))
 
-class compositionLinController(LineController):
-    nameOfMode = ConfigOfButton.nameOfCompositionLine
+class CompositionLinController(LineController):
+
+    def __init__(self):
+        return super().__init__(ConfigOfButton.nameOfCompositionLine)
 
     @classmethod
     def newLine(cls):

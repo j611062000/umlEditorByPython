@@ -21,9 +21,8 @@ def create_window():
     def close():
         window.destroy()
    
-   
     def getText(event):
-            CanvasController.canvasContainer.itemconfig(MouseMotionToController.clickedObjectOnCanvas[-2].text, text = e.get())
+            CanvasController.canvasContainer.itemconfig(MouseMotionToController.singleClickedObj[-2].text, text = e.get())
    
     button1 = tkinter.Button(window, text="Close", command=close, width = 50)
     button2 = tkinter.Button(window, text="OK", command=close,  width = 50)

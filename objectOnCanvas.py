@@ -1,7 +1,7 @@
 import tkinter
 from bridge import MouseMotionToController
 from controller.buttonController import ButtonController
-from decorators import printCurrentAndLastActiveObj, callOnlyInSelectMode
+from decorators import trackMouseClickedObjs, callOnlyInSelectMode
 
 # Bugs: port can't not work occassionally
 
@@ -25,7 +25,7 @@ class TwoDimensionShape():
         self.text = self.instantiateText()
         
     def handleMouseClickEvent(self, event):
-        MouseMotionToController.clickedObjectOnCanvas.append(self)
+        MouseMotionToController.singleClickedObj.append(self)
         TwoDimensionShape.canvasContainer.tag_raise(self.idInCanvas)
         self.raisePortToFront()
         self.raiseTextToFront()

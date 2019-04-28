@@ -1,13 +1,12 @@
 import tkinter
 
 from buttons import Button as bt
-from controller.buttonController import ButtonController
 from configuration import ConfigOfButton, ConfigOfCanvas
+from controller.buttonController import ButtonController
 from controller.canvasController import CanvasController
 from controller.modeController import *
 
 def initAllButtons(master):
-    
     associationLine = bt(master,ConfigOfButton.nameOfAssociationLine)
     class_          = bt(master,ConfigOfButton.nameOfClass)
     compositionLine = bt(master,ConfigOfButton.nameOfCompositionLine)
@@ -19,21 +18,17 @@ def initAllButtons(master):
     
     for button in buttons:
         button.pack()
-
     
     ButtonController.knwoWhatAreAvailableButtons(buttons)
 
     return buttons
 
 
-def initCanvasContainer(master):
-    
+def initCanvasContainer(master):   
     canvasContainer = tkinter.Canvas(master)
     canvasContainer.configure(bg = "white", height = ConfigOfCanvas.heightOfInitCanvas, width = ConfigOfCanvas.widthOfInitCanvas)
     canvasContainer.pack(side = tkinter.LEFT)
-    
     addMouseListenerToCanvas(canvasContainer)
-    
     CanvasController.canvasContainer = canvasContainer
 
 
@@ -46,9 +41,9 @@ def addMouseListenerToCanvas(canvasContainer):
 
 # Should be revised when there is new mode added
 def initModeControllers():
+    CanvasController.availableModes.append(AssociationLinController())
     CanvasController.availableModes.append(ClassModeController())
+    CanvasController.availableModes.append(CompositionLinController())
+    CanvasController.availableModes.append(GeneralizationLinController())
     CanvasController.availableModes.append(SelectModeController())
     CanvasController.availableModes.append(UseCaseModeController())
-    CanvasController.availableModes.append(associationLinController())
-    CanvasController.availableModes.append(generalizationLinController())
-    CanvasController.availableModes.append(compositionLinController())

@@ -7,7 +7,7 @@ class CanvasController():
     
     availableModes = list()
     canvasContainer = None
-
+    
     @classmethod
     def findWhichModeShouldBeActive(cls):
         currentActiveMode = None
@@ -20,8 +20,7 @@ class CanvasController():
                 
     @classmethod
     def handleClickOnCanvas(cls, mouseEvent):
-        MouseMotionToController.clickedObjectOnCanvas.append(False)
-
+        MouseMotionToController.singleClickedObj.append(False)
         currentActiveMode = cls.findWhichModeShouldBeActive()
         currentActiveMode.handleMouseClick(mouseEvent, cls.canvasContainer)
     
