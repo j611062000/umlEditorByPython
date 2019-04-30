@@ -12,33 +12,33 @@ class TwoDimensionShape():
     fillColorOfShape = "grey"
     fillColorOfPort = "black"
 
-    def __init__(self, canvasContainer, createMethod, shiftX, shiftY, mouseEvent):
+    def __init__(self, canvasContainer, createMethod, shiftX, shiftY, mouseEvent, textName):
         TwoDimensionShape.canvasContainer = canvasContainer
         self.coordinateOfPort = list()
         self.idOfPortInCanvas = list()
         self.idInCanvas = TwoDimensionShape.instantiateToCanvas(createMethod, shiftX, shiftY, mouseEvent)
-        self.bindToCanvasWithMouseEvent(self.idInCanvas)
         self.updateCoordinateOfPort(mouseEvent, shiftX, shiftY)
         self.centerCoordinate = (mouseEvent.x+shiftX/2, mouseEvent.y+shiftY/2)
-        self.plusSlope = shiftY / shiftX
-        self.negativeSlope = - (shiftY / shiftX)
+        self.textName = textName
         self.text = self.instantiateText()
+        self.bindToCanvasWithMouseEvent(self.idInCanvas)
         
     def handleMouseClickEvent(self, event):
         MouseMotionToController.singleClickedObj.append(self)
+
         TwoDimensionShape.canvasContainer.tag_raise(self.idInCanvas)
         self.raisePortToFront()
         self.raiseTextToFront()
         self.showPort()
 
     def handleMouseReleaseEvent(self, event):
-        MouseMotionToController.idOfMouseReleaseObject.append(TwoDimensionShape.canvasContainer.find_closest(event.x, event.y))
+        # MouseMotionToController.mouseReleasedObj.append(self)
+        pass
 
     def bindToCanvasWithMouseEvent(self, bindingShape):
         pressHandler = self.handleMouseClickEvent
-        TwoDimensionShape.canvasContainer.tag_bind(bindingShape, '<Button-1>', pressHandler)
-
         releaseHandler = self.handleMouseReleaseEvent
+        TwoDimensionShape.canvasContainer.tag_bind(bindingShape, '<Button-1>', pressHandler)
         TwoDimensionShape.canvasContainer.tag_bind(bindingShape, '<ButtonRelease-1>', releaseHandler)
     
     def instantiatePorts(self, coordinateOfPort, normOfPort):
@@ -47,7 +47,9 @@ class TwoDimensionShape():
             self.idOfPortInCanvas.append(TwoDimensionShape.instantiateToCanvas(methodOfCreation, normOfPort, normOfPort, port))
     
     def instantiateText(self):
-        return TwoDimensionShape.canvasContainer.create_text(*self.centerCoordinate,text = "Class")
+        idOfText = TwoDimensionShape.canvasContainer.create_text(*self.centerCoordinate,text = self.textName)
+        self.bindToCanvasWithMouseEvent(idOfText)
+        return idOfText
 
 
     def updateCoordinateOfPort(self, mouseEvent, shiftX, shiftY):
@@ -76,10 +78,12 @@ class TwoDimensionShape():
     def raisePortToFront(self):
         for port in self.idOfPortInCanvas:
             TwoDimensionShape.canvasContainer.tag_raise(port)
+
+
     def raiseTextToFront(self):
         TwoDimensionShape.canvasContainer.tag_raise(self.text)
 
-
+    
     def movePortWhenShapIsDragged(self, dx, dy):
         for idOfPort in self.idOfPortInCanvas:
             TwoDimensionShape.canvasContainer.move(idOfPort, dx, dy)
@@ -101,16 +105,12 @@ class TwoDimensionShape():
 class ClassObject(TwoDimensionShape):
 
     def __init__(self, mouseEvent, canvasContainer):
-        super().__init__(canvasContainer, canvasContainer.create_rectangle, 100, 140, mouseEvent)
+        super().__init__(canvasContainer, canvasContainer.create_rectangle, 100, 140, mouseEvent, "Class")
     
-    def instantiateText(self):
-        return TwoDimensionShape.canvasContainer.create_text(*self.centerCoordinate,text = "Class")
-
-
 class UseCaseObject(TwoDimensionShape):
     
     def __init__(self, mouseEvent, canvasContainer):
-        super().__init__(canvasContainer, canvasContainer.create_oval, 140, 100, mouseEvent)
+        super().__init__(canvasContainer, canvasContainer.create_oval, 140, 100, mouseEvent, "UseCase")
 
     def instantiateText(self):
         return TwoDimensionShape.canvasContainer.create_text(*self.centerCoordinate,text = "Use Case")
@@ -119,9 +119,11 @@ class LineObject():
       
     canvasContainer = None
     
-    def __init__(self, canvasContainer,x1, y1, x2, y2):
+    def __init__(self, canvasContainer,x1, y1, x2, y2, headObj, tailObj):
         LineObject.canvasContainer = canvasContainer
         self.idInCanvas = self.instantiateToCanvas(x1, y1, x2, y2)
+        self.headObj = headObj
+        self.tailObj = tailObj
     
     def instantiateToCanvas(self,x1, y1, x2, y2):
         LineObject.canvasContainer.create_line(x1, y1, x2, y2)

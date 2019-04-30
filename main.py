@@ -42,9 +42,12 @@ menubar.add_cascade(label="Setting", menu=editMenu)
 
 
 
+                
 initAllButtons(buttonsContainer)
 initCanvasContainer(top)
 initModeControllers()
 
 top.config(menu = menubar)
 top.mainloop()
+
+# oval can't work

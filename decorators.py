@@ -8,6 +8,16 @@ def overrides(func):
     
     return wrapper
 
+def trackMouseReleasedObjs(funct):
+    def wrapper(*args, **kwargs):
+        print("_________Before method_________")
+        print("Released Objs:",MouseMotionToController.mouseReleasedObjId)
+        funct(*args, **kwargs)
+        print("_________After method_________")
+        print("Released Objs:",MouseMotionToController.mouseReleasedObjId)
+    return wrapper
+
+
 def trackMouseClickedObjs(funct):
     def wrapper(*args, **kwargs):
         print("_________Before method_________")
