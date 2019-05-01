@@ -1,6 +1,7 @@
 import tkinter
 
 from buttons import Button as bt
+from bridge import MouseMotionToController
 from configuration import ConfigOfButton, ConfigOfCanvas
 from controller.buttonController import ButtonController
 from controller.canvasController import CanvasController
@@ -30,6 +31,7 @@ def initCanvasContainer(master):
     canvasContainer.pack(side = tkinter.LEFT)
     addMouseListenerToCanvas(canvasContainer)
     CanvasController.canvasContainer = canvasContainer
+    MouseMotionToController.canvasContainer = canvasContainer
 
 
 # Should be revised when there is mouse action added

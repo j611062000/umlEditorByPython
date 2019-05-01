@@ -35,9 +35,6 @@ class CanvasController():
         currentActiveMode.handleMousePressAndDrag(mouseEvent, cls.canvasContainer)
     
     
- 
-
-
     @classmethod
     def handleMouseReleaseOnCanvas(cls, mouseEvent):
         # trackMouseAction(mouseEvent, "Release")

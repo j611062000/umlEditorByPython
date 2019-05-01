@@ -1,8 +1,9 @@
 from bridge import MouseMotionToController
 from configuration import ConfigOfButton
 from controller.buttonController import ButtonController
-from objectOnCanvas import ClassObject, UseCaseObject, LineObject, GeneralizationLine, CompositiontionLine
 from decorators import overrides, trackMouseClickedObjs, trackMouseReleasedObjs
+from objectOnCanvas import ClassObject, UseCaseObject, LineObject, GeneralizationLine, CompositiontionLine, CompositionObject, AssociationLine
+from time import sleep
 
 
 class ModeController():
@@ -11,7 +12,7 @@ class ModeController():
         self.nameOfMode = nameOfMode
     
     def handleMouseClick(self, mouseEvent, canvasContainer):
-        pass
+        raise NotImplementedError
 
 
     def handleMousePressAndDrag(self, mouseEvent, canvasContainer):
@@ -22,9 +23,6 @@ class ModeController():
         pass
 
 
-    def normalizeGUIWhenUnactive(self):
-        pass
-    
     @staticmethod
     def isClickOnCanvas():
 
@@ -48,8 +46,8 @@ class ModeController():
         
         return (inTheRangeOfX) and (inTheRangeOfY)
 
-class ShapeController(ModeController):
 
+class ShapeController(ModeController):
 
     def __init__(self, nameOfMode):
         super().__init__(nameOfMode)
@@ -95,11 +93,18 @@ class SelectModeController(ModeController):
     mouseClickY = None
     absXinDrage = None
     absYinDrage = None
+    objIdOfSelectionArea = False
 
     def __init__(self):
         super().__init__(ConfigOfButton.nameOfSelect)
 
+    def handleMouseRelease(self, mouseEvent, canvasContainer):
+        if SelectModeController.objIdOfSelectionArea:
+            canvasContainer.delete(self.objIdOfSelectionArea)
+            SelectModeController.objIdOfSelectionArea = False
     
+
+
     @staticmethod
     def hideMultiSelectedObj():
          if MouseMotionToController.multiSelectedObjs:
@@ -108,16 +113,21 @@ class SelectModeController(ModeController):
 
     # @trackMouseClickedObjs
     def handleMouseClick(self, mouseEvent, canvasContainer):
+
+        allShapeObjsOnCanvas = self.getAllShapeObjsOnCanvas()
         
         if ModeController.isClickOnShape():
             currentActiveObj = MouseMotionToController.getCurrentClickedObj()
-            SelectModeController.hidePortsByObj(MouseMotionToController.singleClickedObj, currentActiveObj)
-            SelectModeController.hideMultiSelectedObj()
             currentActiveObj.showPort()
+            SelectModeController.hidePortsByObj(allShapeObjsOnCanvas, currentActiveObj)
+            # SelectModeController.hideMultiSelectedObj()
+            
+            if CompositionObjectController.verifyClickedObjIsInGroup(currentActiveObj):
+                CompositionObjectController.showAllObjs(currentActiveObj.groupIds[-1])
 
         else:
-            SelectModeController.hidePortsByObj(MouseMotionToController.singleClickedObj, None)
-            SelectModeController.hideMultiSelectedObj()
+            SelectModeController.hidePortsByObj(allShapeObjsOnCanvas, None)
+            # SelectModeController.hideMultiSelectedObj()
 
         self.mouseClickX = mouseEvent.x
         self.mouseClickY = mouseEvent.y
@@ -133,23 +143,58 @@ class SelectModeController(ModeController):
         
         if ModeController.isClickOnShape():
             draggingObj = MouseMotionToController.getCurrentClickedObj()
-            canvasContainer.move(draggingObj.idInCanvas, dx, dy)
-            draggingObj.movePortWhenShapIsDragged(dx, dy)
+         
+            if CompositionObjectController.verifyClickedObjIsInGroup(draggingObj):
+                CompositionObjectController.moveAllObjsInAGroup(draggingObj.groupIds[-1], dx, dy)
+         
+            else:
+                canvasContainer.move(draggingObj.idInCanvas, dx, dy)
+                draggingObj.moveAttachedObjs(dx, dy)
         
         else:
             x1 = self.absXinDrage
             y1 = self.absYinDrage
             x2 = self.mouseClickX + dx
             y2 = self.mouseClickY + dy
-            selectedObj = canvasContainer.find_enclosed(min(x1,x2), max(y1,y2), max(x1,x2), min(y1,y2))
+            selectedObj = canvasContainer.find_enclosed(min(x1,x2), min(y1,y2), max(x1,x2), max(y1,y2))
             MouseMotionToController.flushmultiSelectedObjs()
             MouseMotionToController.multiSelectedObjs.extend(selectedObj)
-            SelectModeController.showAllPortsOfObjs()
+            CompositionObjectController.groupCandidatesObj = self.getShapeObjsByIds(MouseMotionToController.multiSelectedObjs)
+            SelectModeController.showAllPortsOfSelectedObjs()
+            self.updateSelectionArea(canvasContainer, (x1, y1, x2, y2))
+
+    
+    @classmethod
+    def updateSelectionArea(cls, canvasContainer, argsOfCoords):
+        if not cls.objIdOfSelectionArea:
+            cls.objIdOfSelectionArea = canvasContainer.create_rectangle(*argsOfCoords)
+        else:
+            canvasContainer.coords(cls.objIdOfSelectionArea, *argsOfCoords)
+
+
+    @classmethod
+    def getAllShapeObjsOnCanvas(cls):
+        allShapeObjsOnCanvas = list()
+        for mode in cls.compatibleModes:
+            allShapeObjsOnCanvas.extend(mode.getAvailableObjs())
+        return allShapeObjsOnCanvas
+
+
+    @classmethod
+    def getShapeObjsByIds(cls, ids):
+        if not ids:
+            return False
+        else:
+            allShapeObjsOnCanvas = cls.getAllShapeObjsOnCanvas()
+            
+            return MouseMotionToController.getObjById(ids,allShapeObjsOnCanvas)
 
     @classmethod
     def hidePortsByObj(cls, objs, currentActiveObj):
+        print("enter hide port____")
         for obj in objs:
             if obj != currentActiveObj and obj:
+                print("hide port", obj)
                 obj.hidePort(obj)
 
 
@@ -180,7 +225,7 @@ class SelectModeController(ModeController):
             cls.hidePortsByIds(mode.getAvailableObjs(), MouseMotionToController.multiSelectedObjs)
 
     @classmethod
-    def showAllPortsOfObjs(cls):
+    def showAllPortsOfSelectedObjs(cls):
         for mode in cls.compatibleModes:
             cls.showPortsOfObjs(mode.getAvailableObjs(), MouseMotionToController.multiSelectedObjs)
  
@@ -189,14 +234,18 @@ class LineController(ModeController):
 
     availableLineObj = list()
     canvasContainer = None
-    # startPoint = None
-    # endPoint = None
+    startPointObj = None
+    endPointObj = None
 
     def __init__(self, nameOfMode):
         self.startPoint = None
         self.endPoint = None
         return super().__init__(nameOfMode)
 
+
+    def newLine(self, startPointObj, endPointObj):
+        raise NotImplementedError
+    
 
     @classmethod
     def calDistanceOfTwoCoordinate(cls,x1,y1,x2,y2):
@@ -205,9 +254,6 @@ class LineController(ModeController):
         return (dx**2+dy**2)**(1/2)
 
 
-    def newLine(self):
-        raise NotImplementedError
-    
     @classmethod
     def getAllShapeObjsOnCanvas(cls):
         allShapeObjectsOnCanvas = list()
@@ -227,6 +273,7 @@ class LineController(ModeController):
             if distance < minDistance:
                 minDistance = distance
                 winnerOfPorts = cls.canvasContainer.coords(candidate)[:2]
+      
         return winnerOfPorts
 
 
@@ -235,6 +282,7 @@ class LineController(ModeController):
         if ModeController.isClickOnShape():
             clickedObj = MouseMotionToController.getCurrentClickedObj()
             portsCandidates = clickedObj.idOfPortInCanvas
+            self.startPointObj = clickedObj
             self.startPoint = LineController.getCoordOfClosestPort(portsCandidates, mouseEvent)
     
     
@@ -253,11 +301,11 @@ class LineController(ModeController):
 
         MouseMotionToController.mouseReleasedObjId.append(currentReleasedObjId)
         
-        
-        if ModeController.isClickOnShape():
+        if currentReleasedObjId != False and ModeController.isClickOnShape():
+            self.endPointObj = MouseMotionToController.getObjById(currentReleasedObjId, allShapeObjectsOnCanvas)
             portsCandidates = MouseMotionToController.getCurrentReleasedObj(allShapeObjectsOnCanvas).idOfPortInCanvas
             self.endPoint = LineController.getCoordOfClosestPort(portsCandidates, mouseEvent)
-            self.newLine()
+            self.newLine(self.startPointObj, self.endPointObj)
 
     @classmethod
     def findCoordById(cls, id):
@@ -269,9 +317,9 @@ class AssociationLinController(LineController):
     def __init__(self):
         super().__init__(ConfigOfButton.nameOfAssociationLine)
 
-    def newLine(self):
+    def newLine(self, startPointObj, endPointObj):
         coordinate = [self.startPoint[0], self.startPoint[1], self.endPoint[0], self.endPoint[1]]
-        self.availableLineObj.append(LineObject(self.canvasContainer, *coordinate))
+        self.availableLineObj.append(AssociationLine(self.canvasContainer, *coordinate, startPointObj, endPointObj))
 
 
 class GeneralizationLinController(LineController):
@@ -279,9 +327,9 @@ class GeneralizationLinController(LineController):
     def __init__(self):
         return super().__init__(ConfigOfButton.nameOfGeneralizationLine)
 
-    def newLine(self):
+    def newLine(self,startPointObj, endPointObj):
         coordinate = [self.startPoint[0], self.startPoint[1], self.endPoint[0], self.endPoint[1]]
-        self.availableLineObj.append(GeneralizationLine(self.canvasContainer, *coordinate))
+        self.availableLineObj.append(GeneralizationLine(self.canvasContainer, *coordinate, startPointObj, endPointObj))
 
 
 class CompositionLinController(LineController):
@@ -289,6 +337,75 @@ class CompositionLinController(LineController):
     def __init__(self):
         return super().__init__(ConfigOfButton.nameOfCompositionLine)
 
-    def newLine(self):
+    def newLine(self,startPointObj, endPointObj):
         coordinate = [self.startPoint[0], self.startPoint[1], self.endPoint[0], self.endPoint[1]]
-        self.availableLineObj.append(CompositiontionLine(self.canvasContainer, *coordinate))
+        self.availableLineObj.append(CompositiontionLine(self.canvasContainer, *coordinate,startPointObj, endPointObj))
+
+
+class CompositionObjectController(ModeController):
+    
+    groupCandidatesObj = list()
+    groupsOnCanvas = list()
+    groupIdForNewGroup = 0
+
+    @classmethod
+    def killAGroup(cls):
+        currentActiveObj = MouseMotionToController.getCurrentClickedObj()
+        
+        if CompositionObjectController.verifyClickedObjIsInGroup(currentActiveObj):
+            groupId = currentActiveObj.groupIds[-1]
+            flattenObjs = cls.getFlattenObjsByGroupId(groupId)
+            
+            for obj in flattenObjs:
+                obj.groupIds.pop()
+
+            for count, group in enumerate(cls.groupsOnCanvas):
+                if group.groupId == groupId:
+                    groupToBeDeleted = cls.groupsOnCanvas.pop(count)
+                    del groupToBeDeleted
+                    break
+        else:
+            pass
+                
+
+
+    @classmethod
+    def getGroupById(cls, groupId):
+        for group in cls.groupsOnCanvas:
+            if group.groupId == groupId:
+                return group
+
+    @classmethod
+    def getFlattenObjsByGroupId(cls, groupId):
+        group = cls.getGroupById(groupId)
+        return group.flattenInnerObjs
+
+
+    @classmethod
+    def moveAllObjsInAGroup(cls, groupId, dx, dy):
+        objs = cls.getFlattenObjsByGroupId(groupId)
+        for obj in objs:
+            MouseMotionToController.canvasContainer.move(obj.idInCanvas, dx, dy)
+            obj.moveAttachedObjs(dx, dy)
+
+
+    @classmethod
+    def createNewGroup(cls):
+        cls.groupsOnCanvas.append(CompositionObject(cls.groupCandidatesObj,cls.groupIdForNewGroup))
+        cls.groupIdForNewGroup += 1
+
+
+    @classmethod
+    def verifyClickedObjIsInGroup(cls, obj):
+        if len(obj.groupIds) > 0:
+            return True
+        else:
+            return False
+
+
+    @classmethod
+    def showAllObjs(cls, groupId):
+        cls.getGroupById(groupId).showAllObjs()
+       
+
+

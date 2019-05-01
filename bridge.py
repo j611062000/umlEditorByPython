@@ -1,10 +1,11 @@
 class MouseMotionToController():
     
-    singleClickedObj = list()
-    multiSelectedObjs = list()
-    mouseReleasedObjId = list()
     CLICK_ON_OBJECT = "CLICK_ON_OBJECT"
     CLICK_ON_CANVAS = "CLICK_ON_CANVAS"
+    canvasContainer = None
+    mouseReleasedObjId = list()
+    multiSelectedObjs = list()
+    singleClickedObj = list()
     
     @classmethod
     def displayAllReleasedObjs(cls):
